@@ -1,0 +1,27 @@
+{
+  "name": "kilt-staking-rewards-subscan-api",
+  "description": "A small set of utility scripts to fetch all the staking rewards for a given KILT account using the Subscan HTTP APIs.",
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": {
+    "name": "Antonio Antonino",
+    "email": "aantonino5@disroot.org",
+    "url": "https://github.com/Diiaablo95"
+  },
+  "repository": {
+    "url": "https://github.com/Diiaablo95/kilt-staking-rewards-subscan-api"
+  },
+  "scripts": {
+    "start": "ts-node src/main.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
+  },
+  "dependencies": {
+    "@polkadot/api": "^7.2.1",
+    "@polkadot/types": "^7.2.1",
+    "axios": "^0.24.0",
+    "dotenv": "^10.0.0"
+  }
+}
