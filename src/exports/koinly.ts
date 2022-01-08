@@ -96,17 +96,21 @@ export async function writeToCsv(eventDetails: InputEventDetails[], fileName?: s
     })
 
     console.log("++++++++++")
-    console.log("The following txs have been marked for exporting.")
-    console.log(JSON.stringify(result, undefined, 2))
 
     if (envConfig.dryRun) {
         console.log("Koinly export dry run detected. Not saving to file.")
     } else {
         const filePath = await prepareFile(envConfig)
-        console.log(`Writing txs to ${filePath}...`)
-        // FIXME
-        await result.forEach(async (r) => await fs.appendFile(filePath, r.concat("\n")))
-        console.log("Done.")
+        if (result.length > 0) {
+            console.log("The following txs have been marked for exporting.")
+            console.log(JSON.stringify(result, undefined, 2))
+            console.log(`Writing txs to ${filePath}...`)
+            // FIXME
+            await result.forEach(async (r) => await fs.appendFile(filePath, r.concat("\n")))
+            console.log("Done.")
+        } else {
+            console.log("No txs to export.")
+        }
     }
 
     console.log("++++++++++")
