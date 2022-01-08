@@ -1,6 +1,6 @@
 import { subscan } from "./imports"
 import { koinly } from "./exports"
-import { BN, formatNumber } from '@polkadot/util'
+import { BN } from '@polkadot/util'
 
 const KILT_DECIMALS = 15
 
