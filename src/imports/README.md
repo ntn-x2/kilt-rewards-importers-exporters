@@ -16,6 +16,8 @@ MAX_ROWS            # Max number of results to fetch per page
 START_PAGE          # The page to start from
 MAX_ATTEMPTS        # The max # of attempts upon any request failure before stopping the script
 RETRY_TIMEOUT       # The # of seconds to wait between attempts upon request failure
+FROM_TIMESTAMP      # The UTC timestamp to start fetching events from
+TO_TIMESTAMP        # The UTC timestamp to end fetching events to
 ```
 
 The following variables are required
@@ -29,6 +31,8 @@ while the other variables have the following defaults:
 
 ```bash
 MAX_PAGES=undefined         # Undefined does not cap the maximum # of pages fetched
+FROM_TIMESTAMP=undefined    # Do not override the selected month-harcoded from timestamp (start from beginning of the month)
+TO_TIMESTAMP=undefined      # Do not override the selected month-harcoded to timestamps (end at the end of the month)
 MAX_ROWS=50
 START_PAGE=0
 MAX_ATTEMPTS=5

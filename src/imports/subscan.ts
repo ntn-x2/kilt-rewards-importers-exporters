@@ -12,6 +12,8 @@ const ENV_NAMES = {
     startPage: "START_PAGE",
     maxAttempts: "MAX_ATTEMPTS",
     retryTimeout: "RETRY_TIMEOUT",
+    fromTimestamp: "FROM_TIMESTAMP",
+    toTimestamp: "TO_TIMESTAMP",
 }
 
 // Default values
@@ -34,6 +36,8 @@ type SubscanImportEnvVariables = {
     startPage: number,
     maxAttempts: number,
     retryTimeout: number,
+    fromTimestamp?: number,
+    toTimestamp?: number,
     maxPagesLimit?: number,
 }
 
@@ -49,6 +53,8 @@ function parseEnvVariables(): SubscanImportEnvVariables {
     const startPage = process.env[ENV_NAMES.startPage] ? parseInt(process.env[ENV_NAMES.startPage]!) : DEFAULTS[ENV_NAMES.startPage]
     const maxAttempts = process.env[ENV_NAMES.maxAttempts] ? parseInt(process.env[ENV_NAMES.maxAttempts]!) : DEFAULTS[ENV_NAMES.maxAttempts]
     const retryTimeout = process.env[ENV_NAMES.retryTimeout] ? parseInt(process.env[ENV_NAMES.retryTimeout]!) : DEFAULTS[ENV_NAMES.retryTimeout]
+    const fromTimestamp = process.env[ENV_NAMES.fromTimestamp] ? parseInt(process.env[ENV_NAMES.fromTimestamp]!) : undefined
+    const toTimestamp = process.env[ENV_NAMES.toTimestamp] ? parseInt(process.env[ENV_NAMES.toTimestamp]!) : undefined
     const maxPagesLimit = process.env[ENV_NAMES.maxPagesLimit] ? parseInt(process.env[ENV_NAMES.maxPagesLimit]!) : undefined
 
     return {
@@ -58,12 +64,14 @@ function parseEnvVariables(): SubscanImportEnvVariables {
         startPage,
         maxAttempts,
         retryTimeout,
+        fromTimestamp,
+        toTimestamp,
         maxPagesLimit,
     }
 }
 
 // Month timestamps hardcoded as retrieved from the Subscan UI at https://spiritnet.subscan.io
-function buildRewardEventRequestOptions(page: number, config: Pick<SubscanImportEnvVariables, "subscanApiKey" | "rowsPerPage">, options: Pick<ImportOptions, "month" | "from" | "to">): AxiosRequestConfig {
+function buildRewardEventRequestOptions(page: number, config: Pick<SubscanImportEnvVariables, "subscanApiKey" | "rowsPerPage" | "fromTimestamp" | "toTimestamp">, options: Pick<ImportOptions, "month" | "from" | "to">): AxiosRequestConfig {
     let [computed_from, computed_to]: [number, number] = [0, 0]
     switch (options.month) {
         case "september2021": {
@@ -84,6 +92,14 @@ function buildRewardEventRequestOptions(page: number, config: Pick<SubscanImport
         }
     }
 
+    if (config.fromTimestamp) {
+        computed_from = config.fromTimestamp
+    }
+    if (config.toTimestamp) {
+        computed_to = config.toTimestamp
+    }
+
+    // Options have priority over the env variables, if specified.
     if (options.from) {
         computed_from = options.from
     }
