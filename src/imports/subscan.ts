@@ -120,7 +120,8 @@ function buildRewardEventRequestOptions(page: number, config: Pick<SubscanImport
             to: computed_to,
             module: "parachainstaking",
             call: "rewarded",
-        })
+        }),
+        timeout: 120000,        // 2 min
     }
 }
 
