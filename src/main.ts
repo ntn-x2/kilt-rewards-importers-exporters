@@ -1,17 +1,18 @@
 import dotenv from "dotenv"
-import { subscan } from "./imports"
+import { subscan, rpc } from "./imports"
 import { koinly } from "./exports"
-import { transformSubscanInputToKoinlyOutput } from "./utils"
+import { transformRpcInputToKoinlyOutput } from "./utils"
 
-const octoberEventsHandler: subscan.ImportOptions["pageEventsHandler"] = async (events) => {
-    const transformedInput = transformSubscanInputToKoinlyOutput(events)
+const octoberEventsHandler: rpc.ImportOptions["pageEventsHandler"] = async (events) => {
+    const transformedInput = transformRpcInputToKoinlyOutput(events)
     await koinly.writeToCsv(transformedInput, "october2021.csv")
 }
 
 async function main() {
     dotenv.config()
 
-    await subscan.retrieveAndFilterRewardEventData({ month: "october2021", pageEventsHandler: octoberEventsHandler })
+    // Testing October retrieval
+    await rpc.retrieveAndFilterRewardEventData({ pageEventsHandler: octoberEventsHandler })
 }
 
 main()

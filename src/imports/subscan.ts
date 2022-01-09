@@ -135,15 +135,6 @@ async function timeout(ms: number): Promise<void> {
 
 // Public interface
 
-export type ImportOptions = {
-    month: "september2021" | "october2021" | "november2021" | "december2021",
-    // Can be used to resume fetching data for a given month from a given timestamp
-    from?: number,
-    // Can be used to resume fetching data for a given month until a given timestamp
-    to?: number,
-    pageEventsHandler?: ((events: RewardEventDetails[]) => void)
-}
-
 export type RewardEventDetails = {
     event_index: string,
     block_num: BN,
@@ -155,6 +146,15 @@ export type RewardEventDetails = {
     details: {
         amount: BN,
     },
+}
+
+export type ImportOptions = {
+    month: "september2021" | "october2021" | "november2021" | "december2021",
+    // Can be used to resume fetching data for a given month from a given timestamp
+    from?: number,
+    // Can be used to resume fetching data for a given month until a given timestamp
+    to?: number,
+    pageEventsHandler?: ((events: RewardEventDetails[]) => void)
 }
 
 // Events are sorted from newest to oldest.
