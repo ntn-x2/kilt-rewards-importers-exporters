@@ -40,3 +40,32 @@ RETRY_TIMEOUT=5
 ```
 
 For more info about the Substrate HTTP APIs, refer to [their webpage](https://docs.api.subscan.io).
+
+### Node RPC endpoint
+
+For the RPC importer features to run, the following env variables must be set:
+
+```bash
+RPC_ENDPOINT        # The Spiritnet RPC endpoint to query
+REWARDED_ACCOUNT    # The KILT-encoded account to scan for rewards
+MAX_ROWS            # Max number of results to fetch per page
+START_PAGE          # The page to start from
+FROM_BLOCK          # The block number to start fetching events from
+TO_BLOCK            # The block number to end fetching events to
+```
+
+The following variables are required
+
+```bash
+RPC_ENDPOINT
+REWARDED_ACCOUNT
+```
+
+while the other variables have the following defaults:
+
+```bash
+FROM_TIMESTAMP=0            # Start from genesis block
+TO_TIMESTAMP=undefined      # Uses the latest block at the time of the script running
+MAX_ROWS=50
+START_PAGE=0
+```

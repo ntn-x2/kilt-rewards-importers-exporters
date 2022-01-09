@@ -12,7 +12,6 @@ import { EventRecord } from "@polkadot/types/interfaces"
 const ENV_NAMES = {
     rpcEndpoint: "RPC_ENDPOINT",
     rewardedAccountId: "REWARDED_ACCOUNT",
-    maxPagesLimit: "MAX_PAGES",
     rowsPerPage: "MAX_ROWS",
     startPage: "START_PAGE",
     fromBlock: "FROM_BLOCK",

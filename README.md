@@ -4,7 +4,7 @@ This repo contains a bunch of utility scripts to retrieve and optionally export 
 
 ### Imports
 
-For now, the only supported import method uses the Subscan.io HTTP APIs for KILT Spiritnet.
+For now, the only supported import methods use either the Subscan.io HTTP APIs for KILT Spiritnet or the RPC endpoint exposed by KILT Spiritnet nodes.
 
 For more details about that, see the [imports module](src/imports).
 
