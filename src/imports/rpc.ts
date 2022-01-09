@@ -76,7 +76,7 @@ async function timeout(ms: number): Promise<void> {
 
 function extractRewardData(er: EventRecord): RewardDetails | null {
     const { event } = er
-    if (event.section !== eventSectionName || event.method !== eventMethodName) {
+    if (event.section !== eventSectionName || event.method !== eventMethodName || event.data.length != 2) {
         return null
     }
     return {
@@ -115,8 +115,6 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
     // Inspired from https://github.com/KILTprotocol/workbench-js/blob/main/stakingRewards.js
     while (currentBlock <= toBlock) {
         console.log("----------")
-        // Increase at the beginning, so we can fail anywhere inside here
-        currentBlock = currentBlock.addn(1)
         const blockHash = await api.rpc.chain.getBlockHash(currentBlock)
         const blockState = await api.at(blockHash)
         const blockTimestamp = await blockState.query.timestamp.now().then((t) => new BN(t.toString()))
@@ -125,7 +123,15 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
         console.log(`Scanning block # ${currentBlock} at date ${new Date(blockTimestamp.toNumber()).toUTCString()}`)
 
         // TODO: improve
-        const events = (await blockState.query.system.events() as any) as EventRecord[]
+        let events: EventRecord[]
+        try {
+            events = (await blockState.query.system.events() as any) as EventRecord[]
+        } catch(e) {
+            console.log(e)
+            console.log("Skipping this block...")
+            currentBlock = currentBlock.addn(1)
+            continue
+        }
 
         console.log(`${events.length} events found.`)
 
@@ -136,6 +142,9 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
             }
             return parsedRewardData.account === envConfig.rewardedAccountId
         })
+
+        // Increase at the beginning, so we can fail anywhere inside here
+        currentBlock = currentBlock.addn(1)
 
         if (!accountEvent) {
             console.log(":( No reward found in the block for the provided account.")
