@@ -173,6 +173,14 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
 
         console.log("----------")
     }
+
+    if (pagedTxs.length) {
+        console.log("Flushing last txs...")
+        if (pageEventsHandler) {
+            await pageEventsHandler(pagedTxs)
+        }
+        relevantTxs.push(...pagedTxs)
+    }
     
     console.log(`Total # of relevant events captured: ${relevantTxs.length}.`)
     return relevantTxs
