@@ -154,11 +154,11 @@ export type ImportOptions = {
     from?: number,
     // Can be used to resume fetching data for a given month until a given timestamp
     to?: number,
-    pageEventsHandler?: ((events: RewardEventDetails[]) => void)
+    pageEventsHandler?: ((events: RewardEventDetails[]) => Promise<void>)
 }
 
 // Events are sorted from newest to oldest.
-export async function retrieveAndFilterRewardEventData({ month, pageEventsHandler = () => {}, to, from}: ImportOptions): Promise<RewardEventDetails[]> {
+export async function retrieveAndFilterRewardEventData({ month, pageEventsHandler, to, from }: ImportOptions): Promise<RewardEventDetails[]> {
     const envConfig = parseEnvVariables()
     // Event has info about the public key and not the account address
     const addressPublicKey = u8aToHex(decodeAddress(envConfig.rewardedAccountId, false, 38))
@@ -211,7 +211,7 @@ export async function retrieveAndFilterRewardEventData({ month, pageEventsHandle
         lastEventId = parsedEvents.slice(-1)[0].event_index
 
         console.log(`${parsedEvents.length} new events found.`)
-        
+
         parsedEvents = parsedEvents.filter((e: any) => {
             let eventPublicKey = e.params[0].value as string
             // Sometimes param has leading 0x, sometimes it does not.
@@ -245,7 +245,9 @@ export async function retrieveAndFilterRewardEventData({ month, pageEventsHandle
         console.log(`# of relevant events captured so far: ${relevantTxs.length}.`)
 
         // Call handler, if specified
-        await pageEventsHandler(parsedEvents)
+        if (pageEventsHandler) {
+            await pageEventsHandler(parsedEvents)
+        }
 
         console.log("----------")
 

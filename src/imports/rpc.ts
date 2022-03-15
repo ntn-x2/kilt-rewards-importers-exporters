@@ -87,7 +87,7 @@ function extractRewardData(er: EventRecord): RewardDetails | null {
 // Public interface
 
 export type ImportOptions = {
-    pageEventsHandler?: ((events: RewardEventDetails[]) => void)
+    pageEventsHandler?: ((events: RewardEventDetails[]) => Promise<void>)
 }
 
 export type RewardEventDetails = {
@@ -100,7 +100,7 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
     const envConfig = parseEnvVariables()
 
     const api = await ApiPromise.create({ provider: new WsProvider(envConfig.rpcEndpoint) })
-    
+
     const relevantTxs: RewardEventDetails[] = []
     const fromBlock = envConfig.fromBlock
     const toBlock = envConfig.toBlock || api.query.system.number().then((n) => new BN(n.toString()))
@@ -125,7 +125,7 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
         let events: EventRecord[]
         try {
             events = (await blockState.query.system.events() as any) as EventRecord[]
-        } catch(e) {
+        } catch (e) {
             console.log(e)
             console.log("Skipping this block...")
             currentBlock = currentBlock.addn(1)
@@ -181,7 +181,7 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
         }
         relevantTxs.push(...pagedTxs)
     }
-    
+
     console.log(`Total # of relevant events captured: ${relevantTxs.length}.`)
     return relevantTxs
 }

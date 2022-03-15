@@ -3,9 +3,9 @@ import { subscan, rpc } from "./imports"
 import { koinly } from "./exports"
 import { transformRpcInputToKoinlyOutput } from "./utils"
 
-const octoberEventsHandler: rpc.ImportOptions["pageEventsHandler"] = async (events) => {
+const octoberEventsHandler: rpc.ImportOptions["pageEventsHandler"] = async (events): Promise<void> => {
     const transformedInput = transformRpcInputToKoinlyOutput(events)
-    await koinly.writeToCsv(transformedInput, "october2021.csv")
+    return koinly.writeToCsv(transformedInput, "october2021.csv")
 }
 
 async function main() {
