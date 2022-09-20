@@ -1,5 +1,5 @@
 import dotenv from "dotenv"
-import { subscan, rpc } from "./imports"
+import { rpc } from "./imports"
 import { koinly } from "./exports"
 import { transformRpcInputToKoinlyOutput } from "./utils"
 
