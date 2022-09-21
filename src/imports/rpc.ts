@@ -125,8 +125,9 @@ export async function retrieveAndFilterRewardEventData({
     const relevantTxs: RewardEventDetails[] = []
     const fromBlock = envConfig.fromBlock
     const toBlock =
-        envConfig.toBlock ||
-        api.query.system.number().then((n) => new BN(n.toString()))
+        typeof envConfig.toBlock !== 'undefined'
+            ? envConfig.toBlock
+            : await api.query.system.number().then((n) => new BN(n.toString()))
 
     console.log(
         `Scanning the KILT blockchain using the endpoint at ${envConfig.rpcEndpoint} from block ${fromBlock} to block ${toBlock}...`
@@ -134,6 +135,7 @@ export async function retrieveAndFilterRewardEventData({
 
     let currentBlock = fromBlock
     let pagedTxs: RewardEventDetails[] = []
+    let skippedBlocks: BN[] = []
 
     // Inspired from https://github.com/KILTprotocol/workbench-js/blob/main/stakingRewards.js
     while (currentBlock <= toBlock) {
@@ -151,11 +153,12 @@ export async function retrieveAndFilterRewardEventData({
         } catch (e) {
             console.log(e)
             console.log(`Skipping block ${currentBlock}`)
+            skippedBlocks.push(currentBlock)
             currentBlock = currentBlock.addn(1)
             continue
         }
         process.stdout.write(
-            `Scanning block # ${currentBlock} at date ${new Date(
+            `Found ${relevantTxs.length} events. Scanning block # ${currentBlock} at date ${new Date(
                 blockTimestamp.toNumber()
             ).toUTCString()} with ${events.length} events\r`
         )
@@ -180,16 +183,9 @@ export async function retrieveAndFilterRewardEventData({
             amount: eventDetails.amount,
             block_timestamp: blockTimestamp,
         }
-        console.log(':) Reward event found!')
-        console.log(JSON.stringify(fullDetails, undefined, 2))
+        console.log(`:) Reward event found! ${JSON.stringify(fullDetails, undefined, 2)}`)
 
         pagedTxs.push(fullDetails)
-
-        console.log(
-            `# of relevant events captured so far: ${
-                relevantTxs.length + pagedTxs.length
-            }.`
-        )
 
         // Flush paged txs into total txs
         if (pagedTxs.length === envConfig.rowsPerPage) {
@@ -199,8 +195,6 @@ export async function retrieveAndFilterRewardEventData({
             relevantTxs.push(...pagedTxs)
             pagedTxs = []
         }
-
-        console.log('----------')
     }
 
     if (pagedTxs.length) {
@@ -211,6 +205,5 @@ export async function retrieveAndFilterRewardEventData({
         relevantTxs.push(...pagedTxs)
     }
 
-    console.log(`Total # of relevant events captured: ${relevantTxs.length}.`)
     return relevantTxs
 }

@@ -102,12 +102,9 @@ export async function writeToCsv(eventDetails: InputEventDetails[], fileName?: s
     } else {
         const filePath = await prepareFile(envConfig)
         if (result.length > 0) {
-            console.log("The following txs have been marked for exporting.")
-            console.log(JSON.stringify(result, undefined, 2))
             console.log(`Writing txs to ${filePath}...`)
             // FIXME
             await result.forEach(async (r) => await fs.appendFile(filePath, r.concat("\n")))
-            console.log("Done.")
         } else {
             console.log("No txs to export.")
         }
