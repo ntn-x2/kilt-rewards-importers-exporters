@@ -158,7 +158,9 @@ export async function retrieveAndFilterRewardEventData({
             continue
         }
         process.stdout.write(
-            `Found ${relevantTxs.length} events. Scanning block # ${currentBlock} at date ${new Date(
+            `Found ${
+                relevantTxs.length
+            } events. Scanning block # ${currentBlock} at date ${new Date(
                 blockTimestamp.toNumber()
             ).toUTCString()} with ${events.length} events\r`
         )
@@ -183,7 +185,7 @@ export async function retrieveAndFilterRewardEventData({
             amount: eventDetails.amount,
             block_timestamp: blockTimestamp,
         }
-        console.log(`:) Reward event found! ${JSON.stringify(fullDetails, undefined, 2)}`)
+        console.log(`\n:) Reward event found! ${JSON.stringify(fullDetails)}`)
 
         pagedTxs.push(fullDetails)
 
@@ -205,6 +207,10 @@ export async function retrieveAndFilterRewardEventData({
         relevantTxs.push(...pagedTxs)
     }
 
-    console.log(`Scan finished ${currentBlock <= toBlock} ${currentBlock} ${toBlock} ${currentBlock.cmp(toBlock)}`)
+    console.log(
+        `Scan finished ${
+            currentBlock <= toBlock
+        } ${currentBlock} ${toBlock} ${currentBlock.cmp(toBlock)}`
+    )
     return relevantTxs
 }
