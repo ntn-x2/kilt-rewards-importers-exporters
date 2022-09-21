@@ -138,7 +138,7 @@ export async function retrieveAndFilterRewardEventData({
     let skippedBlocks: BN[] = []
 
     // Inspired from https://github.com/KILTprotocol/workbench-js/blob/main/stakingRewards.js
-    while (currentBlock <= toBlock) {
+    while (currentBlock.cmp(toBlock) < 0) {
         const blockHash = await api.rpc.chain.getBlockHash(currentBlock)
         const blockState = await api.at(blockHash)
         const blockTimestamp = await blockState.query.timestamp
@@ -205,5 +205,6 @@ export async function retrieveAndFilterRewardEventData({
         relevantTxs.push(...pagedTxs)
     }
 
+    console.log(`Scan finished ${currentBlock <= toBlock} ${currentBlock} ${toBlock} ${currentBlock.cmp(toBlock)}`)
     return relevantTxs
 }
