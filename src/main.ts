@@ -5,7 +5,7 @@ import { transformRpcInputToKoinlyOutput } from "./utils"
 
 const octoberEventsHandler: rpc.ImportOptions["pageEventsHandler"] = async (events): Promise<void> => {
     const transformedInput = transformRpcInputToKoinlyOutput(events)
-    return koinly.writeToCsv(transformedInput, "october2021.csv")
+    return koinly.writeToCsv(transformedInput, process.env["OUT_PATH"])
 }
 
 async function main() {
