@@ -1,21 +1,17 @@
-import { ApiPromise, HttpProvider, WsProvider } from "@polkadot/api"
-import { BN, u8aToHex } from "@polkadot/util"
-import { decodeAddress } from "@polkadot/util-crypto"
-import { Codec } from "@polkadot/types/types"
-
-import { formatBalanceAmount } from "../utils"
-
-import dotenv from "dotenv"
-import { EventRecord } from "@polkadot/types/interfaces"
+import { ApiPromise, WsProvider } from '@polkadot/api'
+import { BN } from '@polkadot/util'
+import { typeBundleForPolkadot } from '@kiltprotocol/type-definitions'
+import 'dotenv'
+import { EventRecord } from '@polkadot/types/interfaces'
 
 // Env variables
 const ENV_NAMES = {
-    rpcEndpoint: "RPC_ENDPOINT",
-    rewardedAccountId: "REWARDED_ACCOUNT",
-    rowsPerPage: "MAX_ROWS",
-    startPage: "START_PAGE",
-    fromBlock: "FROM_BLOCK",
-    toBlock: "TO_BLOCK",
+    rpcEndpoint: 'RPC_ENDPOINT',
+    rewardedAccountId: 'REWARDED_ACCOUNT',
+    rowsPerPage: 'MAX_ROWS',
+    startPage: 'START_PAGE',
+    fromBlock: 'FROM_BLOCK',
+    toBlock: 'TO_BLOCK',
 }
 
 // Default values
@@ -26,22 +22,22 @@ const DEFAULTS = {
 }
 
 // Other consts
-const eventSectionName = "parachainStaking"
-const eventMethodName = "Rewarded"
+const eventSectionName = 'parachainStaking'
+const eventMethodName = 'Rewarded'
 
 // Private interface
 
 type RpcImportEnvVariables = {
-    rpcEndpoint: string,
-    rewardedAccountId: string,
-    rowsPerPage: number,
-    fromBlock: BN,
-    toBlock?: BN,
+    rpcEndpoint: string
+    rewardedAccountId: string
+    rowsPerPage: number
+    fromBlock: BN
+    toBlock?: BN
 }
 
 type RewardDetails = {
-    amount: BN,
-    account: string,
+    amount: BN
+    account: string
 }
 
 function parseEnvVariables(): RpcImportEnvVariables {
@@ -49,20 +45,31 @@ function parseEnvVariables(): RpcImportEnvVariables {
     const rewardedAccountId = process.env[ENV_NAMES.rewardedAccountId]
 
     if (!rpcEndpoint || !rewardedAccountId) {
-        throw new Error(`Required env variable not specified. Required env variables are [${ENV_NAMES.rpcEndpoint}, ${ENV_NAMES.rewardedAccountId}].`)
+        throw new Error(
+            `Required env variable not specified. Required env variables are [${ENV_NAMES.rpcEndpoint}, ${ENV_NAMES.rewardedAccountId}].`
+        )
     }
 
-    const rowsPerPage = process.env[ENV_NAMES.rowsPerPage] ? parseInt(process.env[ENV_NAMES.rowsPerPage]!) : DEFAULTS[ENV_NAMES.rowsPerPage]
-    const fromBlock = new BN(process.env[ENV_NAMES.fromBlock] || DEFAULTS[ENV_NAMES.fromBlock])
-    const toBlock = process.env[ENV_NAMES.toBlock] ? new BN(process.env[ENV_NAMES.toBlock]!) : undefined
+    const rowsPerPage = process.env[ENV_NAMES.rowsPerPage]
+        ? parseInt(process.env[ENV_NAMES.rowsPerPage]!)
+        : DEFAULTS[ENV_NAMES.rowsPerPage]
+    const fromBlock = new BN(
+        process.env[ENV_NAMES.fromBlock] || DEFAULTS[ENV_NAMES.fromBlock]
+    )
+    const toBlock = process.env[ENV_NAMES.toBlock]
+        ? new BN(process.env[ENV_NAMES.toBlock]!)
+        : undefined
 
-    return {
+    const env = {
         rpcEndpoint,
         rewardedAccountId,
         rowsPerPage,
         fromBlock,
         toBlock,
     }
+
+    console.log(`Env configuration is: ${JSON.stringify(env)}`)
+    return env
 }
 
 async function timeout(ms: number): Promise<void> {
@@ -75,7 +82,11 @@ async function timeout(ms: number): Promise<void> {
 
 function extractRewardData(er: EventRecord): RewardDetails | null {
     const { event } = er
-    if (event.section !== eventSectionName || event.method !== eventMethodName || event.data.length != 2) {
+    if (
+        event.section !== eventSectionName ||
+        event.method !== eventMethodName ||
+        event.data.length != 2
+    ) {
         return null
     }
     return {
@@ -87,52 +98,72 @@ function extractRewardData(er: EventRecord): RewardDetails | null {
 // Public interface
 
 export type ImportOptions = {
-    pageEventsHandler?: ((events: RewardEventDetails[]) => Promise<void>)
+    pageEventsHandler?: (events: RewardEventDetails[]) => Promise<void>
 }
 
 export type RewardEventDetails = {
-    amount: BN,
-    block_timestamp: BN,
+    amount: BN
+    block_timestamp: BN
 }
 
 // Events are sorted from newest to oldest.
-export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: ImportOptions = {}) {
+export async function retrieveAndFilterRewardEventData({
+    pageEventsHandler,
+}: ImportOptions = {}) {
     const envConfig = parseEnvVariables()
 
-    const api = await ApiPromise.create({ provider: new WsProvider(envConfig.rpcEndpoint) })
+    const api = await ApiPromise.create({
+        provider: new WsProvider(envConfig.rpcEndpoint),
+        typesBundle: {
+            spec: {
+                'mashnet-node': typeBundleForPolkadot,
+                'kilt-spiritnet': typeBundleForPolkadot,
+            },
+        },
+    })
 
     const relevantTxs: RewardEventDetails[] = []
     const fromBlock = envConfig.fromBlock
-    const toBlock = envConfig.toBlock || api.query.system.number().then((n) => new BN(n.toString()))
+    const toBlock =
+        typeof envConfig.toBlock !== 'undefined'
+            ? envConfig.toBlock
+            : await api.query.system.number().then((n) => new BN(n.toString()))
 
-    console.log(`Scanning the KILT blockchain using the endpoint at ${envConfig.rpcEndpoint} from block ${fromBlock} to block ${toBlock}...`)
+    console.log(
+        `Scanning the KILT blockchain using the endpoint at ${envConfig.rpcEndpoint} from block ${fromBlock} to block ${toBlock}...`
+    )
 
-    let currentPage = 0
     let currentBlock = fromBlock
     let pagedTxs: RewardEventDetails[] = []
+    let skippedBlocks: BN[] = []
 
     // Inspired from https://github.com/KILTprotocol/workbench-js/blob/main/stakingRewards.js
-    while (currentBlock <= toBlock) {
-        console.log("----------")
+    while (currentBlock.cmp(toBlock) < 0) {
         const blockHash = await api.rpc.chain.getBlockHash(currentBlock)
         const blockState = await api.at(blockHash)
-        const blockTimestamp = await blockState.query.timestamp.now().then((t) => new BN(t.toString()))
-
-        // FIXME
-        console.log(`Scanning block # ${currentBlock} at date ${new Date(blockTimestamp.toNumber()).toUTCString()}`)
+        const blockTimestamp = await blockState.query.timestamp
+            .now()
+            .then((t) => new BN(t.toString()))
 
         // TODO: improve
         let events: EventRecord[]
         try {
-            events = (await blockState.query.system.events() as any) as EventRecord[]
+            events =
+                (await blockState.query.system.events()) as any as EventRecord[]
         } catch (e) {
             console.log(e)
-            console.log("Skipping this block...")
+            console.log(`Skipping block ${currentBlock}`)
+            skippedBlocks.push(currentBlock)
             currentBlock = currentBlock.addn(1)
             continue
         }
-
-        console.log(`${events.length} events found.`)
+        process.stdout.write(
+            `Found ${
+                relevantTxs.length
+            } events. Scanning block # ${currentBlock} at date ${new Date(
+                blockTimestamp.toNumber()
+            ).toUTCString()} with ${events.length} events\r`
+        )
 
         const accountEvent = events.find((e: EventRecord) => {
             const parsedRewardData = extractRewardData(e)
@@ -146,7 +177,6 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
         currentBlock = currentBlock.addn(1)
 
         if (!accountEvent) {
-            console.log(":( No reward found in the block for the provided account.")
             continue
         }
 
@@ -155,12 +185,9 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
             amount: eventDetails.amount,
             block_timestamp: blockTimestamp,
         }
-        console.log(":) Reward event found!")
-        console.log(JSON.stringify(fullDetails, undefined, 2))
+        console.log(`\n:) Reward event found! ${JSON.stringify(fullDetails)}`)
 
         pagedTxs.push(fullDetails)
-
-        console.log(`# of relevant events captured so far: ${relevantTxs.length + pagedTxs.length}.`)
 
         // Flush paged txs into total txs
         if (pagedTxs.length === envConfig.rowsPerPage) {
@@ -170,18 +197,20 @@ export async function retrieveAndFilterRewardEventData({ pageEventsHandler }: Im
             relevantTxs.push(...pagedTxs)
             pagedTxs = []
         }
-
-        console.log("----------")
     }
 
     if (pagedTxs.length) {
-        console.log("Flushing last txs...")
+        console.log('Flushing last txs...')
         if (pageEventsHandler) {
             await pageEventsHandler(pagedTxs)
         }
         relevantTxs.push(...pagedTxs)
     }
 
-    console.log(`Total # of relevant events captured: ${relevantTxs.length}.`)
+    console.log(
+        `Scan finished ${
+            currentBlock <= toBlock
+        } ${currentBlock} ${toBlock} ${currentBlock.cmp(toBlock)}`
+    )
     return relevantTxs
 }

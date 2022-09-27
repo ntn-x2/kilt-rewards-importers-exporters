@@ -33,3 +33,12 @@ and run the `main()` with
 ```
 yarn start
 ```
+
+### Example Environment
+
+```
+REWARDED_ACCOUNT=4p...r
+RPC_ENDPOINT=wss://spiritnet.kilt.io
+FROM_BLOCK=0
+OUT_PATH=october2021.csv
+```
